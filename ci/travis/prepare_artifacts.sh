@@ -26,25 +26,28 @@ artifacts_structure() {
 			mv ./zImage ./kernel.img
 		fi
 		cd ../
-		mv ./adi_${bcm}_defconfig ./${timestamp}/adi_${bcm}_defconfig
+		cp -r ./adi_${bcm}_defconfig/* ./${timestamp}
 	done
 }
 
 #upload artifacts to Artifactory
 artifacts_artifactory() {
 	cd ${SOURCE_DIRECTORY}
-	python /root/myagent/_work/1/s/ci/travis/upload_to_artifactory.py --base_path="${ARTIFACTORY_PATH}" --server_path="linux_rpi/${BUILD_SOURCEBRANCHNAME}" --local_path="./${timestamp}" --token="${ARTIFACTORY_TOKEN}"
+	python /root/myagent/_work/1/s/ci/travis/upload_to_artifactory.py --base_path="${ARTIFACTORY_PATH}" \
+		--server_path="linux_rpi/${BUILD_SOURCEBRANCHNAME}" --local_path="./${timestamp}" --token="${ARTIFACTORY_TOKEN}"
 }
 
 #archive artifacts and upload to SWDownloads
 artifacts_swdownloads() {
 	cd ${SOURCE_DIRECTORY}/${timestamp}
 	chmod 600 ${KEY_FILE}
-	for bcm in $bcm_types; do
-		tar -zcvf adi_${bcm}_defconfig.tar adi_${bcm}_defconfig
-		scp -2 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o HostKeyAlgorithms=+ssh-dss \
-		    -i ${KEY_FILE} -r ${SOURCE_DIRECTORY}/${timestamp}/adi_${bcm}_defconfig.tar ${DEST_SERVER}
-	done
+	scp -2 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o HostKeyAlgorithms=+ssh-dss \
+		-i ${KEY_FILE} -r modules.tar.gz ${DEST_SERVER}
+	
+	rm modules.tar.gz properties.txt
+	tar -zcvf latest_rpi_boot.tar.gz /*
+	scp -2 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o HostKeyAlgorithms=+ssh-dss \
+	    -i ${KEY_FILE} -r latest_rpi_boot.tar.gz ${DEST_SERVER}
 }
 
 artifacts_${1}

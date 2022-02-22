@@ -56,7 +56,7 @@ adjust_kcflags_against_gcc() {
 	export KCFLAGS
 }
 
-APT_LIST="make bc u-boot-tools flex bison libssl-dev"
+APT_LIST="make tar bc u-boot-tools flex bison kmod libssl-dev"
 
 if [ "$ARCH" = "arm64" ] ; then
 	if [ -z "$CROSS_COMPILE" ] ; then
@@ -190,7 +190,8 @@ build_default() {
 
 	apt_update_install $APT_LIST
 	make ${DEFCONFIG}
-	make -j$NUM_JOBS $IMAGE UIMAGE_LOADADDR=0x8000
+	make -j$NUM_JOBS zImage modules dtbs
+	make INSTALL_MOD_PATH="${PWD}/modules" modules_install
 
 	if [ "$CHECK_ALL_ADI_DRIVERS_HAVE_BEEN_BUILT" = "1" ] ; then
 		check_all_adi_files_have_been_built
